@@ -280,7 +280,7 @@ export default function BonzaiApp() {
       <section className="mx-auto max-w-7xl px-4 py-8 md:py-14">
         <div className="grid md:grid-cols-2 gap-8 items-center">
           <div>
-            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">Löydä kurssit, pajat, opastukset netissä ja livenä.</h1>
+            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">Löydä kurssit, pajat ja oppitunnit Novista.</h1>
             <p className="mt-3 text-neutral-600 max-w-prose">Varaa siistejä tunteja yksin tai pienryhmänä. Novi yhdistää osaajat ja oppijat.</p>
 
             <div className="mt-6 grid gap-3">
