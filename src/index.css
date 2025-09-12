@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+/* Kerro Tailwindille mistä se lukee luokat (v4) */
+@source "./index.html";
+@source "./src/**/*.{js,ts,jsx,tsx}";
+
+/* (valinnainen) perusväri bodylle */
+@layer base {
+  body { @apply bg-white text-neutral-900; }
+}
