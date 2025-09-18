@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-// dummy data 
+// dummy data
 const COURSES = [
   {
     id: 1,
@@ -119,7 +119,7 @@ const BROAD = [
   { key: "coding", label: "Koodaus" },
 ];
 
-// UI helpers 
+// UI helpers
 function Tag({ children }) {
   return <span className="inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium">{children}</span>;
 }
@@ -144,7 +144,7 @@ function Checkbox({ label, checked, onChange }) {
   );
 }
 
-function CourseCard({ c, onOpen }) {
+function CourseCard({ c, onOpen, onEdit }) {
   return (
     <div className="group rounded-2xl overflow-hidden border bg-white shadow-sm hover:shadow-md transition">
       <div className="aspect-[16/9] overflow-hidden">
@@ -169,10 +169,13 @@ function CourseCard({ c, onOpen }) {
           <span>•</span>
           <span>⏱ {c.durationMin} min</span>
         </div>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <div className="font-semibold">{c.price ? `${c.price} €` : "Ilmainen"}</div>
-          <button onClick={() => onOpen(c)} className="rounded-xl px-4 py-2 border bg-black text-white hover:opacity-90">
-            Näytä tiedot
+          <button onClick={() => onOpen(c)} className="rounded-xl px-3 py-1 border bg-black text-white hover:opacity-90">
+            Näytä
+          </button>
+          <button onClick={() => onEdit(c)} className="rounded-xl px-3 py-1 border">
+            Muokkaa
           </button>
         </div>
       </div>
@@ -212,10 +215,92 @@ function FilterSection({ title, children, defaultOpen = true }) {
   );
 }
 
+// CreateCourseForm
+function CreateCourseForm({ onCreate, onClose }) {
+  const [title, setTitle] = useState("");
+  const [teacher, setTeacher] = useState("");
+  const [date, setDate] = useState("");
+  const [price, setPrice] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const newCourse = {
+      id: Date.now(),
+      title,
+      teacher,
+      date,
+      price: Number(price),
+      category: "custom",
+      mode: "online",
+      location: "Etä",
+      seats: 10,
+      durationMin: 60,
+      difficulty: "Aloittelija",
+      facets: { craft: [], code: [], instrument: [] },
+      img: "https://placehold.co/600x400?text=Kurssi",
+    };
+    onCreate(newCourse);
+    onClose();
+  };
+
+  return (
+    <Modal open={true} onClose={onClose} title="Luo uusi kurssi">
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <input className="w-full border rounded px-3 py-2" placeholder="Kurssin nimi" value={title} onChange={(e) => setTitle(e.target.value)} required />
+        <input className="w-full border rounded px-3 py-2" placeholder="Opettaja" value={teacher} onChange={(e) => setTeacher(e.target.value)} required />
+        <input type="date" className="w-full border rounded px-3 py-2" value={date} onChange={(e) => setDate(e.target.value)} required />
+        <input type="number" className="w-full border rounded px-3 py-2" placeholder="Hinta €" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="px-3 py-1 border rounded">
+            Peruuta
+          </button>
+          <button type="submit" className="px-3 py-1 border rounded bg-black text-white">
+            Tallenna
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+// EditCourseForm
+function EditCourseForm({ course, onSave, onClose }) {
+  const [title, setTitle] = useState(course.title);
+  const [price, setPrice] = useState(course.price);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const updated = { ...course, title, price: Number(price) };
+    onSave(updated);
+    onClose();
+  };
+
+  return (
+    <Modal open={true} onClose={onClose} title="Muokkaa kurssia">
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <input className="w-full border rounded px-3 py-2" value={title} onChange={(e) => setTitle(e.target.value)} required />
+        <input type="number" className="w-full border rounded px-3 py-2" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="px-3 py-1 border rounded">
+            Peruuta
+          </button>
+          <button type="submit" className="px-3 py-1 border rounded bg-black text-white">
+            Tallenna
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
 // main app
 export default function BonzaiApp() {
   const [open, setOpen] = useState(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const [courses, setCourses] = useState(COURSES);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editCourse, setEditCourse] = useState(null);
 
   // facet state
   const [fCrafts, setFCrafts] = useState([]);
@@ -234,7 +319,7 @@ export default function BonzaiApp() {
     return selected.some((s) => values.includes(s));
   };
 
-  const filtered = COURSES.filter((c) => {
+  const filtered = courses.filter((c) => {
     const matchMode = true;
     const durMatch = !fDuration.length || fDuration.some((k) => DURATION_BUCKETS.find((b) => b.key === k)?.match(c.durationMin));
     const groupMatch =
@@ -268,9 +353,15 @@ export default function BonzaiApp() {
             <span className="font-bold tracking-tight text-xl">Novi</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm">
-            <a className="hover:underline" href="#">Kurssit</a>
-            <a className="hover:underline" href="#">Opettajille</a>
-            <a className="hover:underline" href="#">Hinnoittelu</a>
+            <a className="hover:underline" href="#">
+              Kurssit
+            </a>
+            <a className="hover:underline" href="#">
+              Opettajille
+            </a>
+            <a className="hover:underline" href="#">
+              Hinnoittelu
+            </a>
             <button className="rounded-xl px-3 py-1.5 border">Kirjaudu</button>
           </nav>
         </div>
@@ -295,7 +386,11 @@ export default function BonzaiApp() {
 
               {/* Quick filters */}
               <div className="flex flex-wrap items-center gap-2">
-                <select className="rounded-xl border px-3 py-2 text-sm" value={fDuration[0] || ""} onChange={(e) => setFDuration(e.target.value ? [e.target.value] : [])}>
+                <select
+                  className="rounded-xl border px-3 py-2 text-sm"
+                  value={fDuration[0] || ""}
+                  onChange={(e) => setFDuration(e.target.value ? [e.target.value] : [])}
+                >
                   <option value="">— Kesto —</option>
                   {DURATION_BUCKETS.map((b) => (
                     <option key={b.key} value={b.key}>
@@ -304,7 +399,11 @@ export default function BonzaiApp() {
                   ))}
                 </select>
 
-                <select className="rounded-xl border px-3 py-2 text-sm" value={fGroupSize[0] || ""} onChange={(e) => setFGroupSize(e.target.value ? [e.target.value] : [])}>
+                <select
+                  className="rounded-xl border px-3 py-2 text-sm"
+                  value={fGroupSize[0] || ""}
+                  onChange={(e) => setFGroupSize(e.target.value ? [e.target.value] : [])}
+                >
                   <option value="">— Ryhmäkoko —</option>
                   {FACETS.groupSize.values.map((g) => (
                     <option key={g} value={g}>
@@ -314,29 +413,31 @@ export default function BonzaiApp() {
                 </select>
 
                 <button className="rounded-xl px-3 py-1.5 border" onClick={() => setFiltersOpen(true)}>
-                  Filtterit {totalSelected ? <span className="ml-1 inline-flex items-center justify-center text-xs rounded-full border px-1.5">{totalSelected}</span> : null}
+                  Filtterit{" "}
+                  {totalSelected ? (
+                    <span className="ml-1 inline-flex items-center justify-center text-xs rounded-full border px-1.5">{totalSelected}</span>
+                  ) : null}
                 </button>
-                <button className="text-sm underline opacity-80" onClick={() => { setFDuration([]); setFGroupSize([]); setBroad("all"); }}>
+                <button
+                  className="text-sm underline opacity-80"
+                  onClick={() => {
+                    setFDuration([]);
+                    setFGroupSize([]);
+                    setBroad("all");
+                  }}
+                >
                   Tyhjennä pikafiltterit
                 </button>
               </div>
             </div>
-          </div>
 
-          {/* Right side teaser grid */}
-          <div className="relative">
-            <div className="rounded-3xl border bg-white p-4 shadow-sm">
-              <div className="grid grid-cols-2 gap-3">
-                {COURSES.slice(0, 4).map((c) => (
-                  <div key={c.id} className="rounded-2xl overflow-hidden border">
-                    <img src={c.img} alt="" className="h-28 w-full object-cover" onError={(e) => { e.currentTarget.src = "https://placehold.co/800x450?text=Kuva"; }} />
-                    <div className="p-2">
-                      <div className="text-xs text-neutral-600">{new Date(c.date).toLocaleDateString()}</div>
-                      <div className="text-sm font-semibold line-clamp-2">{c.title}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="mt-6">
+              <button
+                onClick={() => setCreateOpen(true)}
+                className="rounded-xl px-4 py-2 border bg-emerald-600 text-white hover:opacity-90"
+              >
+                ➕ Luo kurssi
+              </button>
             </div>
           </div>
         </div>
@@ -347,7 +448,7 @@ export default function BonzaiApp() {
         <h2 className="text-xl md:text-2xl font-bold mb-4">Tulokset ({filtered.length})</h2>
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
           {filtered.map((c) => (
-            <CourseCard key={c.id} c={c} onOpen={setOpen} />
+            <CourseCard key={c.id} c={c} onOpen={setOpen} onEdit={(c) => setEditCourse(c)} />
           ))}
         </div>
       </section>
@@ -382,7 +483,16 @@ export default function BonzaiApp() {
           </FilterSection>
         </div>
         <div className="mt-4 flex items-center justify-end gap-2">
-          <button className="rounded-xl px-3 py-1.5 border" onClick={() => { setFCrafts([]); setFCode([]); setFInstr([]); setFDuration([]); setFGroupSize([]); }}>
+          <button
+            className="rounded-xl px-3 py-1.5 border"
+            onClick={() => {
+              setFCrafts([]);
+              setFCode([]);
+              setFInstr([]);
+              setFDuration([]);
+              setFGroupSize([]);
+            }}
+          >
             Tyhjennä
           </button>
           <button className="rounded-xl px-3 py-1.5 border bg-black text-white" onClick={() => setFiltersOpen(false)}>
@@ -395,7 +505,14 @@ export default function BonzaiApp() {
       {open && (
         <div className="fixed inset-0 z-30 bg-black/50 grid place-items-center p-4" onClick={() => setOpen(null)}>
           <div className="max-w-lg w-full rounded-2xl bg-white shadow-xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <img src={open.img} alt="" className="h-48 w-full object-cover" onError={(e) => { e.currentTarget.src = "https://placehold.co/1200x675?text=Kuva"; }} />
+            <img
+              src={open.img}
+              alt=""
+              className="h-48 w-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = "https://placehold.co/1200x675?text=Kuva";
+              }}
+            />
             <div className="p-5 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <h3 className="font-bold text-xl leading-tight">{open.title}</h3>
@@ -422,6 +539,22 @@ export default function BonzaiApp() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Create + Edit modals */}
+      {createOpen && (
+        <CreateCourseForm
+          onCreate={(newCourse) => setCourses([...courses, newCourse])}
+          onClose={() => setCreateOpen(false)}
+        />
+      )}
+
+      {editCourse && (
+        <EditCourseForm
+          course={editCourse}
+          onSave={(updated) => setCourses(courses.map((c) => (c.id === updated.id ? updated : c)))}
+          onClose={() => setEditCourse(null)}
+        />
       )}
 
       {/* Footer */}
