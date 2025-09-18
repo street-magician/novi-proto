@@ -215,7 +215,7 @@ function FilterSection({ title, children, defaultOpen = true }) {
   );
 }
 
-// CreateCourseForm
+// Create course form
 function CreateCourseForm({ onCreate, onClose }) {
   const [title, setTitle] = useState("");
   const [teacher, setTeacher] = useState("");
@@ -263,7 +263,7 @@ function CreateCourseForm({ onCreate, onClose }) {
   );
 }
 
-// EditCourseForm
+// Edit course form
 function EditCourseForm({ course, onSave, onClose }) {
   const [title, setTitle] = useState(course.title);
   const [price, setPrice] = useState(course.price);
@@ -541,7 +541,7 @@ export default function BonzaiApp() {
         </div>
       )}
 
-      {/* Create + Edit modals */}
+      {/* Create + edit modals */}
       {createOpen && (
         <CreateCourseForm
           onCreate={(newCourse) => setCourses([...courses, newCourse])}
